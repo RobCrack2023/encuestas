@@ -1,15 +1,19 @@
-# Sistema de Encuestas Presidenciales Chile 2024
+# Sistema de Encuestas Electorales
 
-Sistema web interactivo para realizar encuestas presidenciales con comparación de candidatos, quiz de afinidad política, línea de tiempo y visualización de resultados en tiempo real.
+Sistema web interactivo y **reutilizable** para realizar encuestas electorales con comparación de candidatos, quiz de afinidad política, línea de tiempo y visualización de resultados en tiempo real.
+
+**Configuración Dinámica**: El año y tipo de elección se configuran fácilmente mediante variables de entorno, permitiendo reutilizar la aplicación para diferentes elecciones sin modificar código.
 
 ## Características
 
+- **Año Dinámico**: Configura el año de elección mediante variables de entorno
 - **Comparador de Candidatos**: Visualiza y compara propuestas lado a lado
 - **Quiz de Afinidad**: 8 preguntas para descubrir tu afinidad con cada candidato
 - **Línea de Tiempo**: Conoce la trayectoria política de cada candidato
 - **Sistema de Votación**: Participa en la encuesta con control de duplicados
 - **Resultados en Tiempo Real**: Gráficos interactivos con actualización automática
 - **Diseño Atractivo**: Interfaz moderna con animaciones fluidas
+- **Totalmente Personalizable**: Cambia candidatos, preguntas y diseño fácilmente
 
 ## Tecnologías
 
@@ -296,6 +300,25 @@ sudo systemctl reload nginx
 ```
 
 ## Personalización
+
+**📖 Para guía completa de personalización, ver [PERSONALIZACION.md](PERSONALIZACION.md)**
+
+### Cambiar año de elección
+
+Edita el archivo `backend/.env`:
+
+```bash
+ELECTION_YEAR=2025
+ELECTION_TITLE=Elecciones Presidenciales Chile
+ELECTION_TYPE=Presidenciales
+```
+
+Reinicia el backend:
+```bash
+sudo systemctl restart encuestas
+```
+
+El año se actualizará automáticamente en toda la aplicación.
 
 ### Modificar candidatos
 

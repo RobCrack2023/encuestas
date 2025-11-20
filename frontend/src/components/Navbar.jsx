@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 import { FaHome, FaBalanceScale, FaClipboardList, FaClock, FaVoteYea, FaChartBar } from 'react-icons/fa'
 import { motion } from 'framer-motion'
+import { useElectionConfig } from '../hooks/useElectionConfig'
 
 const Navbar = () => {
   const location = useLocation()
+  const { config } = useElectionConfig()
 
   const navItems = [
     { path: '/', label: 'Inicio', icon: FaHome },
@@ -20,7 +22,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
             <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Elecciones Chile 2024
+              {config.title} {config.year}
             </div>
           </Link>
 

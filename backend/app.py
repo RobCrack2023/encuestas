@@ -15,6 +15,11 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://encuestas_user:password@l
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Configuración de la elección
+ELECTION_YEAR = os.getenv('ELECTION_YEAR', '2024')
+ELECTION_TITLE = os.getenv('ELECTION_TITLE', 'Elecciones Presidenciales Chile')
+ELECTION_TYPE = os.getenv('ELECTION_TYPE', 'Presidenciales')
+
 db = SQLAlchemy(app)
 
 # Modelos de base de datos
@@ -56,6 +61,14 @@ class RespuestaCandidato(db.Model):
 @app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok', 'message': 'API funcionando correctamente'})
+
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    return jsonify({
+        'year': ELECTION_YEAR,
+        'title': ELECTION_TITLE,
+        'type': ELECTION_TYPE
+    })
 
 @app.route('/api/candidatos', methods=['GET'])
 def get_candidatos():

@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaBalanceScale, FaClipboardList, FaClock, FaVoteYea } from 'react-icons/fa'
+import { useElectionConfig } from '../hooks/useElectionConfig'
 
 const Home = () => {
+  const { config } = useElectionConfig()
   const features = [
     {
       icon: FaBalanceScale,
@@ -63,7 +65,7 @@ const Home = () => {
         className="text-center mb-16"
       >
         <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Elecciones Presidenciales Chile 2024
+          {config.title} {config.year}
         </h1>
         <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
           Infórmate, compara y decide. Conoce en profundidad las propuestas de cada candidato

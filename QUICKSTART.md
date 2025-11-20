@@ -131,6 +131,28 @@ sudo systemctl restart encuestas
 cd frontend && npm run build
 ```
 
+## Cambiar Año de Elección
+
+```bash
+sudo nano /var/www/encuestas/backend/.env
+```
+
+Modifica estas líneas:
+
+```bash
+ELECTION_YEAR=2025
+ELECTION_TITLE=Elecciones Presidenciales Chile
+ELECTION_TYPE=Presidenciales
+```
+
+Reinicia:
+
+```bash
+sudo systemctl restart encuestas
+```
+
+El año se actualiza automáticamente en toda la app.
+
 ## Personalizar Candidatos
 
 ```bash
@@ -149,6 +171,8 @@ Luego reinicializa:
 curl -X POST http://localhost:5000/api/init-db
 sudo systemctl restart encuestas
 ```
+
+**💡 Guía completa**: Ver [PERSONALIZACION.md](PERSONALIZACION.md)
 
 ## URLs Importantes
 
