@@ -1,0 +1,21 @@
+[Unit]
+Description=Encuestas Presidenciales - Gunicorn Backend
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/encuestas/backend
+Environment="PATH=/var/www/encuestas/backend/venv/bin"
+EnvironmentFile=/var/www/encuestas/backend/.env
+ExecStart=/var/www/encuestas/backend/venv/bin/gunicorn -c gunicorn_config.py app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
