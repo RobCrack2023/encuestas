@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from flask_login import LoginManager
+import bcrypt
 
 load_dotenv()
 
@@ -14,62 +16,34 @@ CORS(app)
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://encuestas_user:password@localhost/encuestas_db')
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Configuración de la elección
 ELECTION_YEAR = os.getenv('ELECTION_YEAR', '2024')
 ELECTION_TITLE = os.getenv('ELECTION_TITLE', 'Elecciones Presidenciales Chile')
 ELECTION_TYPE = os.getenv('ELECTION_TYPE', 'Presidenciales')
 
-db = SQLAlchemy(app)
+# Importar modelos desde models.py
+from models import (
+    db, Usuario, Configuracion, Candidato, Voto,
+    Pregunta, RespuestaCandidato, Noticia, FuenteNoticia
+)
 
-# Modelos de base de datos
-class Candidato(db.Model):
-    __tablename__ = 'candidatos'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    partido = db.Column(db.String(100))
-    foto_url = db.Column(db.String(255))
-    biografia = db.Column(db.Text)
-    programa = db.Column(db.JSON)
-    linea_tiempo = db.Column(db.JSON)
-    votos = db.relationship('Voto', backref='candidato', lazy=True)
+# Inicializar db con la app
+db.init_app(app)
 
-class Voto(db.Model):
-    __tablename__ = 'votos'
-    id = db.Column(db.Integer, primary_key=True)
-    candidato_id = db.Column(db.Integer, db.ForeignKey('candidatos.id'), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    ip_hash = db.Column(db.String(64))  # Hash de IP para evitar votos duplicados
+# Configurar Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'admin.login'
 
-class Pregunta(db.Model):
-    __tablename__ = 'preguntas'
-    id = db.Column(db.Integer, primary_key=True)
-    texto = db.Column(db.String(500), nullable=False)
-    categoria = db.Column(db.String(50))
-    orden = db.Column(db.Integer)
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuario.query.get(int(user_id))
 
-class RespuestaCandidato(db.Model):
-    __tablename__ = 'respuestas_candidato'
-    id = db.Column(db.Integer, primary_key=True)
-    pregunta_id = db.Column(db.Integer, db.ForeignKey('preguntas.id'), nullable=False)
-    candidato_id = db.Column(db.Integer, db.ForeignKey('candidatos.id'), nullable=False)
-    posicion = db.Column(db.Integer)  # 1-5: Muy en desacuerdo a Muy de acuerdo
-    pregunta = db.relationship('Pregunta', backref='respuestas')
-    candidato_rel = db.relationship('Candidato', backref='respuestas')
-
-class Noticia(db.Model):
-    __tablename__ = 'noticias'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(500), nullable=False)
-    url = db.Column(db.String(1000), nullable=False, unique=True)
-    summary = db.Column(db.Text)
-    published_at = db.Column(db.DateTime)
-    source = db.Column(db.String(100))
-    source_id = db.Column(db.String(50))
-    source_logo = db.Column(db.String(255))
-    image_url = db.Column(db.String(1000))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
+# Importar y registrar rutas admin
+from admin_routes import admin_bp
+app.register_blueprint(admin_bp)
 
 # Rutas API
 @app.route('/api/health', methods=['GET'])
@@ -78,11 +52,20 @@ def health():
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    return jsonify({
-        'year': ELECTION_YEAR,
-        'title': ELECTION_TITLE,
-        'type': ELECTION_TYPE
-    })
+    # Obtener config desde BD si existe, sino usar variables de entorno
+    config = Configuracion.query.first()
+    if config:
+        return jsonify({
+            'year': config.election_year,
+            'title': config.election_title,
+            'type': config.election_type
+        })
+    else:
+        return jsonify({
+            'year': ELECTION_YEAR,
+            'title': ELECTION_TITLE,
+            'type': ELECTION_TYPE
+        })
 
 @app.route('/api/candidatos', methods=['GET'])
 def get_candidatos():
@@ -308,6 +291,19 @@ def init_db():
     Pregunta.query.delete()
     RespuestaCandidato.query.delete()
     Voto.query.delete()
+
+    # Crear configuración inicial si no existe
+    config = Configuracion.query.first()
+    if not config:
+        config = Configuracion(
+            election_year=ELECTION_YEAR,
+            election_title=ELECTION_TITLE,
+            election_type=ELECTION_TYPE,
+            site_name='Sistema de Encuestas',
+            maintenance_mode=False
+        )
+        db.session.add(config)
+        db.session.commit()
 
     # Crear candidatos de ejemplo
     candidato1 = Candidato(
