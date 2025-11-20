@@ -1,0 +1,150 @@
+==========================================================================
+GUÍA DE INTEGRACIÓN DEL PANEL ADMIN EN app.py
+==========================================================================
+
+PASO 1: AGREGAR IMPORTS AL INICIO
+----------------------------------
+
+Después de las líneas existentes:
+    from datetime import datetime
+    import os
+    from dotenv import load_dotenv
+
+AGREGAR:
+
+    from flask_login import LoginManager
+    import bcrypt
+
+PASO 2: REEMPLAZAR INICIALIZACIÓN DE DB
+----------------------------------------
+
+BUSCAR estas líneas (aproximadamente líneas 13-23):
+    db = SQLAlchemy(app)
+
+REEMPLAZAR POR:
+    # Importar modelos desde models.py
+    from models import (
+        db, Usuario, Configuracion, Candidato, Voto,
+        Pregunta, RespuestaCandidato, Noticia, FuenteNoticia
+    )
+
+    # Inicializar db con la app
+    db.init_app(app)
+
+PASO 3: ELIMINAR DEFINICIONES DE MODELOS
+-----------------------------------------
+
+ELIMINAR todas las clases de modelos (líneas ~25-73):
+    class Candidato(db.Model):
+        ...
+
+    class Voto(db.Model):
+        ...
+
+    class Pregunta(db.Model):
+        ...
+
+    class RespuestaCandidato(db.Model):
+        ...
+
+    class Noticia(db.Model):
+        ...
+
+Ahora los modelos se importan desde models.py
+
+PASO 4: CONFIGURAR FLASK-LOGIN
+-------------------------------
+
+Después de:
+    db.init_app(app)
+
+AGREGAR:
+
+    # Configurar Flask-Login
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = 'admin.login'
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return Usuario.query.get(int(user_id))
+
+PASO 5: REGISTRAR BLUEPRINT ADMIN
+----------------------------------
+
+Después de las líneas de Flask-Login, AGREGAR:
+
+    # Importar y registrar rutas admin
+    from admin_routes import admin_bp
+    app.register_blueprint(admin_bp)
+
+PASO 6: ACTUALIZAR ENDPOINT /api/config
+----------------------------------------
+
+BUSCAR:
+    @app.route('/api/config', methods=['GET'])
+    def get_config():
+        return jsonify({
+            'year': ELECTION_YEAR,
+            'title': ELECTION_TITLE,
+            'type': ELECTION_TYPE
+        })
+
+REEMPLAZAR POR:
+
+    @app.route('/api/config', methods=['GET'])
+    def get_config():
+        # Obtener config desde BD si existe, sino usar variables de entorno
+        config = Configuracion.query.first()
+        if config:
+            return jsonify({
+                'year': config.election_year,
+                'title': config.election_title,
+                'type': config.election_type
+            })
+        else:
+            return jsonify({
+                'year': ELECTION_YEAR,
+                'title': ELECTION_TITLE,
+                'type': ELECTION_TYPE
+            })
+
+PASO 7: GUARDAR Y REINICIAR
+----------------------------
+
+1. Guardar app.py
+2. Reiniciar servicio:
+   sudo systemctl restart encuestas
+
+3. Verificar que no hay errores:
+   sudo journalctl -u encuestas -n 50
+
+==========================================================================
+VERIFICACIÓN
+==========================================================================
+
+Probar que todo funciona:
+
+1. Health check:
+   curl http://localhost:5000/api/health
+
+2. Config check:
+   curl http://localhost:5000/api/config
+
+3. Admin check:
+   curl http://localhost:5000/api/admin/check-auth
+
+Si todo responde correctamente, la integración fue exitosa.
+
+==========================================================================
+ARCHIVOS NECESARIOS
+==========================================================================
+
+Asegúrate de que existan estos archivos en backend/:
+- models.py
+- admin_routes.py
+- create_admin.py
+
+Si falta alguno, descárgalos del repositorio Git.
+
+==========================================================================

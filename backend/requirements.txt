@@ -8,3 +8,5 @@ beautifulsoup4==4.12.2
 requests==2.31.0
 feedparser==6.0.11
 APScheduler==3.10.4
+Flask-Login==0.6.3
+bcrypt==4.1.2
