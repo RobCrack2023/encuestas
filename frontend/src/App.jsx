@@ -6,6 +6,7 @@ import Quiz from './pages/Quiz'
 import LineaTiempo from './pages/LineaTiempo'
 import Votacion from './pages/Votacion'
 import Resultados from './pages/Resultados'
+import Noticias from './pages/Noticias'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/comparar" element={<Comparador />} />
           <Route path="/quiz" element={<Quiz />} />
           <Route path="/linea-tiempo" element={<LineaTiempo />} />
+          <Route path="/noticias" element={<Noticias />} />
           <Route path="/votar" element={<Votacion />} />
           <Route path="/resultados" element={<Resultados />} />
         </Routes>

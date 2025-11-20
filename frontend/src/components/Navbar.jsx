@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { FaHome, FaBalanceScale, FaClipboardList, FaClock, FaVoteYea, FaChartBar } from 'react-icons/fa'
+import { FaHome, FaBalanceScale, FaClipboardList, FaClock, FaNewspaper, FaVoteYea, FaChartBar } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 import { useElectionConfig } from '../hooks/useElectionConfig'
 
@@ -12,6 +12,7 @@ const Navbar = () => {
     { path: '/comparar', label: 'Comparar', icon: FaBalanceScale },
     { path: '/quiz', label: 'Quiz', icon: FaClipboardList },
     { path: '/linea-tiempo', label: 'Trayectoria', icon: FaClock },
+    { path: '/noticias', label: 'Noticias', icon: FaNewspaper },
     { path: '/votar', label: 'Votar', icon: FaVoteYea },
     { path: '/resultados', label: 'Resultados', icon: FaChartBar },
   ]

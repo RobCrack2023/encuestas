@@ -57,6 +57,20 @@ class RespuestaCandidato(db.Model):
     pregunta = db.relationship('Pregunta', backref='respuestas')
     candidato_rel = db.relationship('Candidato', backref='respuestas')
 
+class Noticia(db.Model):
+    __tablename__ = 'noticias'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(500), nullable=False)
+    url = db.Column(db.String(1000), nullable=False, unique=True)
+    summary = db.Column(db.Text)
+    published_at = db.Column(db.DateTime)
+    source = db.Column(db.String(100))
+    source_id = db.Column(db.String(50))
+    source_logo = db.Column(db.String(255))
+    image_url = db.Column(db.String(1000))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+
 # Rutas API
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -177,6 +191,85 @@ def calcular_afinidad():
         })
 
     return jsonify(sorted(afinidades, key=lambda x: x['afinidad'], reverse=True))
+
+@app.route('/api/noticias', methods=['GET'])
+def get_noticias():
+    """Obtiene noticias almacenadas en la base de datos"""
+    limit = request.args.get('limit', 20, type=int)
+    source = request.args.get('source', None)
+
+    query = Noticia.query.filter_by(is_active=True)
+
+    if source:
+        query = query.filter_by(source_id=source)
+
+    noticias = query.order_by(Noticia.published_at.desc()).limit(limit).all()
+
+    return jsonify([{
+        'id': n.id,
+        'title': n.title,
+        'url': n.url,
+        'summary': n.summary,
+        'published_at': n.published_at.isoformat() if n.published_at else None,
+        'source': n.source,
+        'source_id': n.source_id,
+        'source_logo': n.source_logo,
+        'image_url': n.image_url
+    } for n in noticias])
+
+@app.route('/api/noticias/actualizar', methods=['POST'])
+def actualizar_noticias():
+    """Ejecuta el scraper y actualiza las noticias"""
+    try:
+        from scraper.news_scraper import get_political_news
+
+        # Scrape noticias
+        noticias_scraped = get_political_news(limit=50)
+
+        nuevas = 0
+        for noticia_data in noticias_scraped:
+            # Verificar si ya existe por URL
+            existente = Noticia.query.filter_by(url=noticia_data['url']).first()
+
+            if not existente:
+                nueva_noticia = Noticia(
+                    title=noticia_data['title'],
+                    url=noticia_data['url'],
+                    summary=noticia_data['summary'],
+                    published_at=noticia_data['published_at'],
+                    source=noticia_data['source'],
+                    source_id=noticia_data['source_id'],
+                    source_logo=noticia_data['source_logo'],
+                    image_url=noticia_data['image_url']
+                )
+                db.session.add(nueva_noticia)
+                nuevas += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'message': f'{nuevas} noticias nuevas agregadas',
+            'total_scraped': len(noticias_scraped),
+            'nuevas': nuevas
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/noticias/fuentes', methods=['GET'])
+def get_fuentes():
+    """Lista las fuentes de noticias configuradas"""
+    from scraper.news_scraper import NewsScraper
+    scraper = NewsScraper()
+
+    fuentes = [{
+        'id': source_id,
+        'name': source_config['name'],
+        'logo': source_config['logo'],
+        'type': source_config['type']
+    } for source_id, source_config in scraper.sources.items()]
+
+    return jsonify(fuentes)
 
 @app.route('/api/comparar', methods=['GET'])
 def comparar_candidatos():
